@@ -3,8 +3,8 @@ package yaml
 import (
 	"io/ioutil"
 
-	"github.com/jiurongzhao/bootstrap-global/config"
-	"github.com/jiurongzhao/bootstrap-global/util"
+	"github.com/jsmzr/bootstrap-config/config"
+	"github.com/jsmzr/bootstrap-config/util"
 
 	"gopkg.in/yaml.v2"
 )
