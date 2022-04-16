@@ -1,10 +1,11 @@
 package yaml
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/jsmzr/bootstrap-config/config"
-	"github.com/jsmzr/bootstrap-config/util"
 
 	"gopkg.in/yaml.v2"
 )
@@ -12,7 +13,7 @@ import (
 type YamlConfig struct{}
 
 type YamlContainer struct {
-	dict map[string]interface{}
+	content string
 }
 
 func (c *YamlConfig) Load(filename string) (config.Configer, error) {
@@ -20,23 +21,34 @@ func (c *YamlConfig) Load(filename string) (config.Configer, error) {
 	if err != nil {
 		return nil, err
 	}
-	var dict map[interface{}]interface{}
-	err = yaml.Unmarshal(data, &dict)
-	if err != nil {
+	var instance map[interface{}]interface{}
+	if err := yaml.Unmarshal(data, &instance); err != nil {
 		return nil, err
 	}
-	return &YamlContainer{
-		dict: util.FlatMap(&dict),
-	}, nil
+	dict := convertDict(instance)
+	if b, err := json.Marshal(dict); err != nil {
+		return nil, err
+	} else {
+		return &YamlContainer{content: string(b)}, nil
+	}
 }
 
-func (c *YamlContainer) Get(key string) (interface{}, bool) {
-	value, ok := c.dict[key]
-	return value, ok
+func convertDict(data map[interface{}]interface{}) map[string]interface{} {
+	dict := make(map[string]interface{})
+	for k, v := range data {
+		ks := fmt.Sprintf("%v", k)
+		cv, ok := v.(map[interface{}]interface{})
+		if ok {
+			dict[ks] = convertDict(cv)
+		} else {
+			dict[ks] = v
+		}
+	}
+	return dict
 }
 
-func (c *YamlContainer) Resolve(prefix string, p interface{}) error {
-	return util.ResolveStruct(&c.dict, prefix, p)
+func (c *YamlContainer) GetJson() string {
+	return c.content
 }
 
 func init() {
